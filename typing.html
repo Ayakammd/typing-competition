@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HKA Typing Competition</title>
+    <style>
+        body {
+            background-color: #323437;
+            color: #646669;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 26px;
+            user-select: none;
+            overflow: hidden;
+        }
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #323437;
+        }
+        #main-menu { display: flex; }
+        
+        h1 { color: #e2b714; font-size: 50px; margin-bottom: 50px; }
+        h2 { color: #e2b714; font-size: 36px; margin-bottom: 30px; }
+        
+        .btn {
+            background-color: #2c2e31;
+            color: #d1d0c5;
+            border: none;
+            padding: 15px 30px;
+            font-size: 24px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            transition: 0.2s;
+            width: 250px;
+            box-sizing: border-box;
+        }
+        .btn:hover { background-color: #4a4c4f; }
+
+        .btn-multi-line {
+            line-height: 1.2;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #top-bar {
+            position: absolute;
+            top: 30px;
+            width: 90%;
+            display: flex;
+            justify-content: space-between;
+            font-size: 24px;
+            color: #e2b714;
+        }
+        .stats { text-align: right; color: #646669; font-size: 18px; line-height: 1.5; }
+        .stats span { color: #e2b714; font-size: 24px; font-weight: bold; }
+
+        #text-display {
+            width: 90%;
+            max-width: 1200px;
+            line-height: 1.6;
+            letter-spacing: 1px;
+            position: relative;
+            margin-top: 50px;
+            word-wrap: break-word;
+            text-align: left;
+        }
+        span.letter { display: inline-block; position: relative; }
+        span.untyped { color: #646669; }
+        span.correct { color: #d1d0c5; }
+        span.wrong { color: #ca4754; text-decoration: underline; }
+        
+        span.caret::before {
+            content: '';
+            position: absolute;
+            left: -2px;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            background-color: #e2b714;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        #hidden-input { position: absolute; opacity: 0; z-index: -1; }
+
+        #bottom-bar {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        #bottom-bar .btn { width: 150px; font-size: 16px; padding: 10px; }
+
+        .score-title { font-size: 60px; font-weight: bold; color: #e2b714; margin-bottom: 20px; }
+        .score-detail { font-size: 24px; color: #646669; margin-bottom: 20px; }
+        .score-detail span { color: #d1d0c5; }
+        
+        .input-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .name-input {
+            padding: 12px;
+            font-size: 20px;
+            font-family: 'Courier New', monospace;
+            background-color: #2c2e31;
+            color: #d1d0c5;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            width: 250px;
+        }
+        
+        .table-container { 
+            width: 80%; 
+            max-width: 800px; 
+            margin-top: 20px; 
+            max-height: 60vh; 
+            overflow-y: auto; 
+            border: 1px solid #4a4c4f;
+            border-radius: 5px;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #4a4c4f; }
+        th { color: #e2b714; position: sticky; top: 0; background-color: #2c2e31; z-index: 10; }
+        
+        .highlight-row { background-color: #4a4c4f; color: #d1d0c5; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div id="main-menu" class="screen">
+        <h1>HKA Typing Competition</h1>
+        <button class="btn btn-multi-line" onclick="startPractice()">Practice<br>Mode</button>
+        <button class="btn btn-multi-line" onclick="showRegistration()">Competition<br>Mode</button>
+        <button class="btn btn-multi-line" onclick="viewLeaderboardFromMenu()" style="margin-top: 30px; background-color: #e2b714; color: #323437;">Check<br>Leaderboard</button>
+    </div>
+
+    <div id="register-screen" class="screen">
+        <h2>Competition Registration</h2>
+        <div class="input-group">
+            <input type="text" id="reg-name" class="name-input" placeholder="请输入英文名+中文名">
+            <input type="text" id="reg-class" class="name-input" placeholder="请输入班级">
+        </div>
+        <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; background-color: #4caf50;" onclick="validateAndRegister()">Start</button>
+        <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; margin-top: 10px;" onclick="goToMenu()">Cancel</button>
+        <p id="reg-msg" style="font-size: 18px; height: 50px; color: #ca4754; text-align: center; line-height: 1.2; white-space: pre-line;"></p>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div id="top-bar">
+            <div id="timer">⏱ 30s</div>
+            <div class="stats">
+                Words typed: <span id="words-typed">0</span><br>
+                Accuracy: <span id="accuracy">100%</span>
+            </div>
+        </div>
+        
+        <div id="text-display"></div>
+        <input type="text" id="hidden-input" autocomplete="off">
+
+        <div id="bottom-bar">
+            <button class="btn" onclick="nextPage()">Next Page</button>
+            <button class="btn" style="background-color: #ca4754;" onclick="endGame()">End Now</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <div class="score-title" id="final-score">Score: 0</div>
+        <div class="score-detail">
+            Words typed: <span id="final-words">0</span> &nbsp;&nbsp;&nbsp;&nbsp; 
+            Accuracy: <span id="final-acc">0%</span>
+        </div>
+        
+        <button class="btn" id="check-rank-btn" style="background-color: #e2b714; color: #323437; display: none;" onclick="goToLeaderboard()">Check Your Rank</button>
+        <button class="btn" id="back-btn" onclick="goToMenu()">Back to Menu</button>
+    </div>
+
+    <div id="live-leaderboard-screen" class="screen">
+        <h1>Live Leaderboard</h1>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Score</th>
+                        <th>Words</th>
+                        <th>Accuracy</th>
+                    </tr>
+                </thead>
+                <tbody id="live-leaderboard-body">
+                    <tr><td colspan="6" style="text-align:center;">Waiting for data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size: 16px; color: #e2b714; margin-top: 20px;">Real-time updates active.</p>
+        <!-- 给返回按钮加个 id，方便用代码控制显示隐藏 -->
+        <button class="btn" id="leaderboard-back-btn" style="margin-top: 20px;" onclick="goToMenu()">Back to Menu</button>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://zzfysgmnufhwgqbdbkrt.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_wCDGJuauDWsoCalfsdQsGg_XW6vACBS';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const PRACTICE_WORDS = "dream cover beach drink happy light music phone table water chair green smile sweet black bread cloud dance earth fruit glass heart house juice knife lemon money night ocean paper queen river sheep sugar tiger train voice watch young apple brave catch clean close color early empty event field floor fresh front funny grand human ideal inner joint known large lucky magic major minor model north offer order paint peace plant proud quick quiet radio ready right round share short small sound space speak sport stand start stone story study thank think three today touch under visit white world write".split(" ");
+        const COMPETITION_WORDS = "achieve balance capture declare effects factory general harvest improve journey kitchen library machine natural observe prepare quality reserve service travel unusual village welcome yellow ability brother culture develop evening forward history include justice knowing leading medical network outside private quickly respect science teacher uniform various western working ancient benefit concern discuss economy feature improve library measure nothing operate project quality receive special tonight village weather account brought central digital element freedom greater husband initial kingdom mention obvious promise request station student thought usually welcome article between chapter disease evening further history include journey machine natural outside".split(" ");
+
+        let state = {
+            mode: "practice", pageIndex: 0, targetText: "", typedText: "",
+            timerId: null, isPlaying: false, timeLimit: 30,
+            baseGreen: 0, baseTyped: 0, baseWords: 0,
+            finalStats: {},
+            liveInterval: null,
+            currentUserId: null,
+            currentName: "",
+            currentClass: ""
+        };
+
+        function switchScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(el => el.style.display = 'none');
+            document.getElementById(screenId).style.display = 'flex';
+        }
+
+        function goToMenu() {
+            if(state.liveInterval) {
+                clearInterval(state.liveInterval);
+                state.liveInterval = null;
+            }
+            switchScreen('main-menu');
+        }
+
+        function viewLeaderboardFromMenu() {
+            state.currentUserId = null; 
+            switchScreen('live-leaderboard-screen');
+            // 旁观者进来看，显示返回按钮
+            document.getElementById('leaderboard-back-btn').style.display = 'block';
+            startLiveLeaderboard();
+        }
+
+        function showRegistration() {
+            document.getElementById('reg-name').value = "";
+            document.getElementById('reg-class').value = "";
+            document.getElementById('reg-msg').innerText = "";
+            switchScreen('register-screen');
+        }
+
+        async function validateAndRegister() {
+            const name = document.getElementById('reg-name').value.trim();
+            const className = document.getElementById('reg-class').value.trim();
+            const msgEl = document.getElementById('reg-msg');
+
+            if (!name) { 
+                msgEl.innerText = "Name cannot be empty!\n(姓名不可为空)"; 
+                return; 
+            }
+            if (!className) { 
+                msgEl.innerText = "Class cannot be empty!\n(班级不可为空)"; 
+                return; 
+            }
+
+            msgEl.style.color = "#e2b714";
+            msgEl.innerText = "Checking...";
+
+            const { data, error } = await supabaseClient
+                .from('scores')
+                .select('id')
+                .eq('player_name', name);
+
+            if (error) { 
+                msgEl.style.color = "#ca4754"; 
+                msgEl.innerText = "Database error. Please try again."; 
+                return; 
+            }
+            
+            if (data && data.length > 0) {
+                msgEl.style.color = "#ca4754";
+                msgEl.innerText = "This name is already registered!\n(该姓名已存在，请换一个)";
+                return;
+            }
+
+            msgEl.style.color = "#4caf50";
+            msgEl.innerText = "Registering...";
+
+            const { data: insertData, error: insertError } = await supabaseClient
+                .from('scores')
+                .insert([{ 
+                    player_name: name, 
+                    class_name: className, 
+                    score: 0, 
+                    words_typed: 0,
+                    accuracy: 0
+                }])
+                .select();
+
+            if (insertError) {
+                msgEl.style.color = "#ca4754";
+                msgEl.innerText = "Error: " + insertError.message;
+            } else {
+                state.currentUserId = insertData[0].id;
+                state.currentName = name;
+                state.currentClass = className;
+                startCompetitionGame();
+            }
+        }
+
+        function startPractice() {
+            state.mode = "practice";
+            state.timeLimit = 30;
+            state.currentUserId = null;
+            initGame();
+        }
+
+        function startCompetitionGame() {
+            state.mode = "competition";
+            state.timeLimit = 60;
+            initGame();
+        }
+
+        function initGame() {
+            state.pageIndex = 0;
+            state.baseGreen = 0; state.baseTyped = 0; state.baseWords = 0;
+            if(state.liveInterval) { clearInterval(state.liveInterval); state.liveInterval = null; }
+            switchScreen('game-screen');
+            
+            document.getElementById('timer').innerText = "⏱ " + state.timeLimit + "s";
+            
+            loadNewPage();
+        }
+
+        function loadNewPage() {
+            state.pageIndex++;
+            state.typedText = "";
+            document.getElementById('hidden-input').value = "";
+            
+            let baseWords = state.mode === 'practice' ? PRACTICE_WORDS : COMPETITION_WORDS;
+            let words = state.pageIndex % 2 === 1 ? baseWords.slice(0, 50) : baseWords.slice(50, 100);
+            
+            words.sort(() => Math.random() - 0.5);
+            state.targetText = words.join(" ");
+            
+            renderText();
+            updateStats();
+            document.getElementById('hidden-input').focus();
+        }
+
+        function nextPage() {
+            let stats = updateStats();
+            state.baseGreen = stats.totalGreen;
+            state.baseTyped = stats.totalTyped;
+            state.baseWords = stats.totalWords;
+            loadNewPage();
+        }
+
+        function renderText() {
+            let html = "";
+            for (let i = 0; i < state.targetText.length; i++) {
+                let char = state.targetText[i];
+                if (char === " ") char = "&nbsp;";
+                
+                let className = "untyped";
+                if (i < state.typedText.length) {
+                    if (state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) {
+                        className = "correct";
+                    } else {
+                        className = "wrong";
+                    }
+                } else if (i === state.typedText.length) {
+                    html += `<span class="letter untyped caret">${char}</span>`;
+                    continue;
+                }
+                html += `<span class="letter ${className}">${char}</span>`;
+            }
+            document.getElementById('text-display').innerHTML = html;
+        }
+
+        function updateStats() {
+            let pageGreen = 0;
+            for (let i = 0; i < state.typedText.length; i++) {
+                if (i < state.targetText.length && state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) {
+                    pageGreen++;
+                }
+            }
+            
+            let pageWords = 0;
+            let currentIdx = 0;
+            let targetWords = state.targetText.split(" ");
+            for (let w of targetWords) {
+                if (state.typedText.length >= currentIdx + w.length) {
+                    pageWords++;
+                } else break;
+                currentIdx += w.length + 1;
+            }
+
+            let totalGreen = state.baseGreen + pageGreen;
+            let totalTyped = state.baseTyped + state.typedText.length;
+            let totalWords = state.baseWords + pageWords;
+            let acc = totalTyped > 0 ? Math.round((totalGreen / totalTyped) * 100) : 100;
+            
+            document.getElementById('words-typed').innerText = totalWords;
+            document.getElementById('accuracy').innerText = acc + "%";
+            
+            return { totalGreen, totalTyped, totalWords, acc };
+        }
+
+        document.getElementById('hidden-input').addEventListener('input', (e) => {
+            let typed = e.target.value;
+            if (!state.isPlaying && typed.length > 0) {
+                state.isPlaying = true;
+                startTimer();
+            }
+            if (typed.length > state.targetText.length) {
+                typed = typed.slice(0, state.targetText.length);
+                e.target.value = typed;
+            }
+            let idx = typed.length - 1;
+            if (idx >= 0 && typed[idx] === " " && state.targetText[idx] !== " ") {
+                typed = typed.slice(0, -1);
+                e.target.value = typed;
+            }
+            state.typedText = typed;
+            renderText();
+            updateStats();
+        });
+
+        function startTimer() {
+            let timeLeft = state.timeLimit;
+            let timerEl = document.getElementById('timer');
+            timerEl.innerText = "⏱ " + timeLeft + "s";
+            
+            state.timerId = setInterval(() => {
+                timeLeft--;
+                if (timeLeft <= 0) {
+                    timerEl.innerText = "⏱ 0s";
+                    endGame();
+                } else {
+                    timerEl.innerText = "⏱ " + timeLeft + "s";
+                }
+            }, 1000);
+        }
+
+        async function endGame() {
+            clearInterval(state.timerId);
+            state.isPlaying = false;
+            
+            let stats = updateStats();
+            let rawScore = stats.totalWords * (stats.acc / 100);
+            let scoreStr = Number.isInteger(rawScore) ? rawScore : rawScore.toFixed(1);
+            
+            let scoreText = `Score: ${scoreStr}`;
+            if (state.mode === 'practice') scoreText += " (Practice)";
+            
+            document.getElementById('final-score').innerText = scoreText;
+            document.getElementById('final-words').innerText = stats.totalWords;
+            document.getElementById('final-acc').innerText = stats.acc + "%";
+            
+            state.finalStats = { score: parseFloat(scoreStr), words: stats.totalWords, accuracy: stats.acc };
+            switchScreen('result-screen');
+            
+            const checkBtn = document.getElementById('check-rank-btn');
+            const backBtn = document.getElementById('back-btn');
+            
+            if (state.mode === 'competition') {
+                backBtn.style.display = 'none'; 
+                checkBtn.style.display = 'block';
+                
+                const { error } = await supabaseClient
+                    .from('scores')
+                    .update({ 
+                        score: state.finalStats.score, 
+                        words_typed: state.finalStats.words,
+                        accuracy: state.finalStats.accuracy
+                    })
+                    .eq('id', state.currentUserId);
+                    
+                if(error) console.error("Failed to update score:", error);
+                
+            } else {
+                backBtn.style.display = 'block';
+                checkBtn.style.display = 'none';
+            }
+        }
+
+        function goToLeaderboard() {
+            switchScreen('live-leaderboard-screen');
+            // 比赛完跳过来的，隐藏返回按钮
+            document.getElementById('leaderboard-back-btn').style.display = 'none';
+            startLiveLeaderboard();
+        }
+
+        function startLiveLeaderboard() {
+            const tbody = document.getElementById('live-leaderboard-body');
+            fetchLeaderboardData(tbody);
+            state.liveInterval = setInterval(() => {
+                fetchLeaderboardData(tbody);
+            }, 3000);
+        }
+
+        async function fetchLeaderboardData(tbody) {
+            const { data, error } = await supabaseClient
+                .from('scores')
+                .select('*')
+                .order('score', { ascending: false });
+
+            if (error) return;
+
+            tbody.innerHTML = "";
+            data.forEach((row, index) => {
+                let className = row.class_name ? row.class_name : '-';
+                let isSelf = (state.currentUserId && row.id === state.currentUserId);
+                let rowClass = isSelf ? 'class="highlight-row"' : '';
+
+                tbody.innerHTML += `
+                    <tr ${rowClass}>
+                        <td>${index + 1}</td>
+                        <td>${row.player_name}</td>
+                        <td>${className}</td>
+                        <td style="color:#e2b714; font-weight:bold;">${row.score}</td>
+                        <td>${row.words_typed}</td>
+                        <td>${row.accuracy}%</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.addEventListener('click', () => {
+            if (state.isPlaying || document.getElementById('game-screen').style.display === 'flex') {
+                document.getElementById('hidden-input').focus();
+            }
+        });
+    </script>
+</body>
+</html>
