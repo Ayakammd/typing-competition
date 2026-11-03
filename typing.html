@@ -155,7 +155,7 @@
             timerId: null, isPlaying: false, timeLimit: 30,
             baseGreen: 0, baseTyped: 0, baseWords: 0,
             finalStats: {}, liveInterval: null,
-            currentUserId: null, currentName: "", currentClass: "", currentRole: "student"
+            currentUserId: null, currentName: "", currentClass: "", currentRole: "student", bonusScore: 0
         };
 
         function switchScreen(screenId) {
@@ -229,7 +229,7 @@
             msgEl.innerText = "Checking...";
 
             let student = null;
-            let isKamisatoAyaka = false; // 神里绫华专属标记
+            let isKamisatoAyaka = false; 
 
             if (state.currentRole === 'teacher') {
                 const { data, error } = await supabaseClient.from('teachers').select('*').ilike('name', rawName);
@@ -241,8 +241,15 @@
                 if (String(student.password) !== rawPassword) {
                     msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; return;
                 }
-                state.currentClass = "Teacher"; 
                 
+                // 【核心恢复】老师只能比赛一次
+                if (student.play_times >= 1) {
+                    msgEl.style.color = "#ca4754"; 
+                    msgEl.innerText = "You have already participated!\n(该账号已参赛)"; 
+                    return;
+                }
+
+                state.currentClass = "Teacher"; 
                 let newPlayTimes = (student.play_times || 0) + 1;
                 await supabaseClient.from('teachers').update({ play_times: newPlayTimes }).eq('name', student.name);
                 
@@ -254,46 +261,46 @@
                 }
                 student = data[0];
                 
-                // 【彩蛋 1】666666 恶搞
                 if (rawPassword === "666666") {
                     msgEl.style.color = "#e2b714"; 
                     msgEl.innerText = "不是？你还真信啊，老实回去输密码吧hhhhh";
                     return; 
                 }
 
-                // 【彩蛋 2】神里绫华天下第一
                 if (rawPassword === "0928linghua") {
                     isKamisatoAyaka = true;
-                    msgEl.style.color = "#00bfff"; // 亮蓝色
+                    msgEl.style.color = "#00bfff"; 
                     msgEl.innerText = "神里绫华天下第一！";
                 } else {
-                    // 正常校验密码
                     if (String(student.password) !== rawPassword) {
                         msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; return;
                     }
                 }
 
+                // 【核心恢复】学生只能比赛一次
+                if (student.play_times >= 1) {
+                    msgEl.style.color = "#ca4754"; 
+                    msgEl.innerText = "You have already participated!\n(该账号已参赛)"; 
+                    return;
+                }
+
                 state.currentClass = student.class_name || "HKA"; 
-                
                 let newPlayTimes = (student.play_times || 0) + 1;
                 await supabaseClient.from('students').update({ play_times: newPlayTimes }).eq('name', student.name);
             }
 
-            // 如果是绫华彩蛋，稍微停顿一下展示文字，再进入游戏
             if (!isKamisatoAyaka) {
                 msgEl.style.color = "#4caf50"; 
                 msgEl.innerText = "Login successful. Preparing game...";
             }
             
             state.currentName = student.name; 
-            
-            // 【核心逻辑】如果是绫华彩蛋，初始分设为 50，否则为 0
-            let initialScore = isKamisatoAyaka ? 50 : 0;
+            state.bonusScore = isKamisatoAyaka ? 50 : 0;
 
             const { data: insertData, error: insertError } = await supabaseClient.from('scores').insert([{ 
                 player_name: state.currentName, 
                 class_name: state.currentClass, 
-                score: initialScore, 
+                score: state.bonusScore, 
                 words_typed: 0, 
                 accuracy: 0 
             }]).select();
@@ -306,13 +313,12 @@
                 
                 setTimeout(() => {
                     startCompetitionGame(); 
-                    // 进入游戏后把输入框焦点调好
                     setTimeout(() => { document.getElementById('hidden-input').focus(); }, 100);
-                }, isKamisatoAyaka ? 1500 : 0); // 彩蛋多停 1.5 秒
+                }, isKamisatoAyaka ? 1500 : 0); 
             }
         }
 
-        function startPractice() { state.mode = "practice"; state.timeLimit = 30; state.currentUserId = null; initGame(); }
+        function startPractice() { state.mode = "practice"; state.timeLimit = 30; state.currentUserId = null; state.bonusScore = 0; initGame(); }
         function startCompetitionGame() { state.mode = "competition"; state.timeLimit = 60; initGame(); }
         
         function initGame() { 
@@ -366,34 +372,25 @@
 
         async function endGame() {
             clearInterval(state.timerId); state.isPlaying = false;
-            let stats = updateStats(); let rawScore = stats.totalWords * (stats.acc / 100); let scoreStr = Number.isInteger(rawScore) ? rawScore : rawScore.toFixed(1);
+            let stats = updateStats(); let rawScore = stats.totalWords * (stats.acc / 100);
+            
+            let finalTotalScore = rawScore + state.bonusScore;
+
+            let scoreStr = Number.isInteger(finalTotalScore) ? finalTotalScore : finalTotalScore.toFixed(1);
             let scoreText = `Score: ${scoreStr}`; if (state.mode === 'practice') scoreText += " (Practice)";
-            document.getElementById('final-score').innerText = scoreText; document.getElementById('final-words').innerText = stats.totalWords; document.getElementById('final-acc').innerText = stats.acc + "%";
-            
-            // 注意：这里结算更新的时候，因为之前数据库里已经有 50 了，所以这里直接加上打出来的分就行。
-            // 但我们目前数据库里的 score 是直接 update 覆盖，所以我们需要把之前的 50 拿回来加一下。
-            let existingScore = 0;
-            if (state.currentUserId) {
-                const { data } = await supabaseClient.from('scores').select('score').eq('id', state.currentUserId).single();
-                if (data) existingScore = data.score;
-            }
-            
-            // 计算最终分（基础分 + 本次打字得分）
-            let finalTotalScore = existingScore + rawScore;
-            let displayScoreStr = Number.isInteger(finalTotalScore) ? finalTotalScore : finalTotalScore.toFixed(1);
 
-            // 重新更新一下结算页面的显示分数
-            if (state.mode === 'competition') {
-                document.getElementById('final-score').innerText = `Score: ${displayScoreStr}`;
-            }
-
-            state.finalStats = { score: finalTotalScore, words: stats.totalWords, accuracy: stats.acc }; switchScreen('result-screen');
+            document.getElementById('final-score').innerText = scoreText;
+            document.getElementById('final-words').innerText = stats.totalWords; document.getElementById('final-acc').innerText = stats.acc + "%";
+            
+            state.finalStats = { score: parseFloat(scoreStr), words: stats.totalWords, accuracy: stats.acc }; 
+            switchScreen('result-screen');
+            
             const checkBtn = document.getElementById('check-rank-btn'); const backBtn = document.getElementById('back-btn');
             
             if (state.mode === 'competition') { 
                 backBtn.style.display = 'none'; 
                 checkBtn.style.display = 'block'; 
-                await supabaseClient.from('scores').update({ score: finalTotalScore, words_typed: stats.totalWords, accuracy: stats.acc }).eq('id', state.currentUserId); 
+                await supabaseClient.from('scores').update({ score: state.finalStats.score, words_typed: state.finalStats.words, accuracy: state.finalStats.accuracy }).eq('id', state.currentUserId); 
             } else { 
                 backBtn.style.display = 'block'; 
                 checkBtn.style.display = 'none'; 
