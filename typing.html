@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>HKA Typing Competition</title>
+    <title>Hankai Typestar Typing Competition 4.0</title>
     <style>
         body { background-color: #323437; color: #646669; font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; font-size: 26px; user-select: none; overflow: hidden; }
         .screen { display: none; width: 100%; height: 100vh; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; background-color: #323437; }
@@ -35,16 +35,28 @@
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #4a4c4f; }
         th { color: #e2b714; position: sticky; top: 0; background-color: #2c2e31; z-index: 10; }
         .highlight-row { background-color: #4a4c4f; color: #d1d0c5; }
+        
+        /* 新增的署名样式 */
+        .footer-text {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            font-size: 16px;
+            color: #646669;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
     <div id="main-menu" class="screen">
-        <h1>HKA Typing Competition</h1>
+        <h1>Hankai Typestar Typing Competition 4.0</h1>
         <button class="btn btn-multi-line" onclick="startPractice()">Practice<br>Mode</button>
         <button class="btn btn-multi-line" onclick="showRoleSelect()">Competition<br>Mode</button>
         <button class="btn btn-multi-line" onclick="showLeaderboardSelect()" style="margin-top: 30px; background-color: #e2b714; color: #323437;">Check<br>Leaderboard</button>
+        
+        <!-- 署名 -->
+        <div class="footer-text">Created by Johnny Jin of Tech Club of Hankai</div>
     </div>
 
     <div id="leaderboard-select-screen" class="screen">
@@ -116,7 +128,6 @@
         const SUPABASE_KEY = 'sb_publishable_wCDGJuauDWsoCalfsdQsGg_XW6vACBS';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ==================== 全新硬核词库 (600词，共用) ====================
         const WORD_BANK = `acre afterlife archaeology chamber channel core corridor distinct elite engineer found gap glory interior lion role royal sole stairs surface
         agreement arise benefactor blacksmith chimney compensate encounter exceed forge humble iron ladder modest occupy penny preach prosper province satisfaction sustain
         acquire awkward caretaker deceive discourage fake hatred hut inferior lodge neglect newcomer offense overlook repay ridiculous satisfactory shepherd venture wheat
@@ -240,7 +251,6 @@
                 }
                 state.currentClass = "Teacher"; 
                 
-                // 【修复】老师登录成功，给老师的 play_times +1
                 let newPlayTimes = (student.play_times || 0) + 1;
                 await supabaseClient.from('teachers').update({ play_times: newPlayTimes }).eq('name', student.name);
                 
@@ -256,7 +266,6 @@
                 }
                 state.currentClass = student.class_name || "HKA"; 
                 
-                // 【修复】学生登录成功，给学生的 play_times +1
                 let newPlayTimes = (student.play_times || 0) + 1;
                 await supabaseClient.from('students').update({ play_times: newPlayTimes }).eq('name', student.name);
             }
