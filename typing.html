@@ -4,140 +4,36 @@
     <meta charset="UTF-8">
     <title>HKA Typing Competition</title>
     <style>
-        body {
-            background-color: #323437;
-            color: #646669;
-            font-family: 'Courier New', monospace;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 26px;
-            user-select: none;
-            overflow: hidden;
-        }
-        .screen {
-            display: none;
-            width: 100%;
-            height: 100vh;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 0;
-            left: 0;
-            background-color: #323437;
-        }
+        body { background-color: #323437; color: #646669; font-family: 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; font-size: 26px; user-select: none; overflow: hidden; }
+        .screen { display: none; width: 100%; height: 100vh; flex-direction: column; align-items: center; justify-content: center; position: absolute; top: 0; left: 0; background-color: #323437; }
         #main-menu { display: flex; }
-        
         h1 { color: #e2b714; font-size: 50px; margin-bottom: 50px; }
         h2 { color: #e2b714; font-size: 36px; margin-bottom: 30px; }
-        
-        .btn {
-            background-color: #2c2e31;
-            color: #d1d0c5;
-            border: none;
-            padding: 15px 30px;
-            font-size: 24px;
-            margin: 10px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-family: 'Courier New', monospace;
-            transition: 0.2s;
-            width: 250px;
-            box-sizing: border-box;
-        }
+        .btn { background-color: #2c2e31; color: #d1d0c5; border: none; padding: 15px 30px; font-size: 24px; margin: 10px; cursor: pointer; border-radius: 5px; font-family: 'Courier New', monospace; transition: 0.2s; width: 280px; box-sizing: border-box; }
         .btn:hover { background-color: #4a4c4f; }
-
-        .btn-multi-line {
-            line-height: 1.2;
-            height: 80px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #top-bar {
-            position: absolute;
-            top: 30px;
-            width: 90%;
-            display: flex;
-            justify-content: space-between;
-            font-size: 24px;
-            color: #e2b714;
-        }
+        .btn-multi-line { line-height: 1.2; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #top-bar { position: absolute; top: 30px; width: 90%; display: flex; justify-content: space-between; font-size: 24px; color: #e2b714; }
         .stats { text-align: right; color: #646669; font-size: 18px; line-height: 1.5; }
         .stats span { color: #e2b714; font-size: 24px; font-weight: bold; }
-
-        #text-display {
-            width: 90%;
-            max-width: 1200px;
-            line-height: 1.6;
-            letter-spacing: 1px;
-            position: relative;
-            margin-top: 50px;
-            word-wrap: break-word;
-            text-align: left;
-        }
+        #text-display { width: 90%; max-width: 1200px; line-height: 1.6; letter-spacing: 1px; position: relative; margin-top: 50px; word-wrap: break-word; text-align: left; }
         span.letter { display: inline-block; position: relative; }
         span.untyped { color: #646669; }
         span.correct { color: #d1d0c5; }
         span.wrong { color: #ca4754; text-decoration: underline; }
-        
-        span.caret::before {
-            content: '';
-            position: absolute;
-            left: -2px;
-            top: 0;
-            width: 3px;
-            height: 100%;
-            background-color: #e2b714;
-            animation: blink 1s infinite;
-        }
+        span.caret::before { content: ''; position: absolute; left: -2px; top: 0; width: 3px; height: 100%; background-color: #e2b714; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
-
         #hidden-input { position: absolute; opacity: 0; z-index: -1; }
-
-        #bottom-bar {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            display: flex;
-            gap: 15px;
-        }
+        #bottom-bar { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 15px; }
         #bottom-bar .btn { width: 150px; font-size: 16px; padding: 10px; }
-
         .score-title { font-size: 60px; font-weight: bold; color: #e2b714; margin-bottom: 20px; }
         .score-detail { font-size: 24px; color: #646669; margin-bottom: 20px; }
         .score-detail span { color: #d1d0c5; }
-        
         .input-group { margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
-        .name-input {
-            padding: 12px;
-            font-size: 20px;
-            font-family: 'Courier New', monospace;
-            background-color: #2c2e31;
-            color: #d1d0c5;
-            border: none;
-            border-radius: 5px;
-            outline: none;
-            width: 250px;
-        }
-        
-        .table-container { 
-            width: 80%; 
-            max-width: 800px; 
-            margin-top: 20px; 
-            max-height: 60vh; 
-            overflow-y: auto; 
-            border: 1px solid #4a4c4f;
-            border-radius: 5px;
-        }
+        .name-input { padding: 12px; font-size: 20px; font-family: 'Courier New', monospace; background-color: #2c2e31; color: #d1d0c5; border: none; border-radius: 5px; outline: none; width: 280px; text-align: center; }
+        .table-container { width: 80%; max-width: 800px; margin-top: 20px; max-height: 60vh; overflow-y: auto; border: 1px solid #4a4c4f; border-radius: 5px; }
         table { width: 100%; border-collapse: collapse; font-size: 20px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #4a4c4f; }
         th { color: #e2b714; position: sticky; top: 0; background-color: #2c2e31; z-index: 10; }
-        
         .highlight-row { background-color: #4a4c4f; color: #d1d0c5; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -147,33 +43,46 @@
     <div id="main-menu" class="screen">
         <h1>HKA Typing Competition</h1>
         <button class="btn btn-multi-line" onclick="startPractice()">Practice<br>Mode</button>
-        <button class="btn btn-multi-line" onclick="showRegistration()">Competition<br>Mode</button>
-        <button class="btn btn-multi-line" onclick="viewLeaderboardFromMenu()" style="margin-top: 30px; background-color: #e2b714; color: #323437;">Check<br>Leaderboard</button>
+        <button class="btn btn-multi-line" onclick="showRoleSelect()">Competition<br>Mode</button>
+        <button class="btn btn-multi-line" onclick="showLeaderboardSelect()" style="margin-top: 30px; background-color: #e2b714; color: #323437;">Check<br>Leaderboard</button>
     </div>
 
-    <div id="register-screen" class="screen">
-        <h2>Competition Registration</h2>
+    <div id="leaderboard-select-screen" class="screen">
+        <h2>Select Leaderboard</h2>
+        <button class="btn" style="background-color: #e2b714; color: #323437;" onclick="viewLeaderboard('all')">Overall Leaderboard</button>
+        <button class="btn" style="background-color: #e2b714; color: #323437;" onclick="viewLeaderboard('student')">Student Leaderboard</button>
+        <button class="btn" style="background-color: #e2b714; color: #323437;" onclick="viewLeaderboard('teacher')">Teacher Leaderboard</button>
+        <button class="btn" style="margin-top: 20px;" onclick="goToMenu()">Cancel</button>
+    </div>
+
+    <div id="role-select-screen" class="screen">
+        <h2>Competition Mode</h2>
+        <button class="btn" style="background-color: #e2b714; color: #323437;" onclick="showLogin('student')">I'm Student</button>
+        <button class="btn" style="background-color: #e2b714; color: #323437;" onclick="showLogin('teacher')">I'm Teacher</button>
+        <button class="btn" style="margin-top: 20px;" onclick="goToMenu()">Cancel</button>
+    </div>
+
+    <div id="login-screen" class="screen">
+        <h2 id="login-title">Student Login</h2>
         <div class="input-group">
-            <input type="text" id="reg-name" class="name-input" placeholder="请输入英文名+中文名">
-            <input type="text" id="reg-class" class="name-input" placeholder="请输入班级">
+            <input type="text" id="login-name" class="name-input" placeholder="">
+            <input type="password" id="login-password" class="name-input" placeholder="">
         </div>
-        <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; background-color: #4caf50;" onclick="validateAndRegister()">Start</button>
-        <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; margin-top: 10px;" onclick="goToMenu()">Cancel</button>
-        <p id="reg-msg" style="font-size: 18px; height: 50px; color: #ca4754; text-align: center; line-height: 1.2; white-space: pre-line;"></p>
+        <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; background-color: #4caf50;" onclick="validateLogin()">Login</button>
+        <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; margin-top: 10px;" onclick="showRoleSelect()">Cancel</button>
+        <p id="login-msg" style="font-size: 18px; height: 50px; color: #ca4754; text-align: center; line-height: 1.2; white-space: pre-line;"></p>
     </div>
 
     <div id="game-screen" class="screen">
         <div id="top-bar">
-            <div id="timer">⏱ 30s</div>
+            <div id="timer">⏱ 60s</div>
             <div class="stats">
                 Words typed: <span id="words-typed">0</span><br>
                 Accuracy: <span id="accuracy">100%</span>
             </div>
         </div>
-        
         <div id="text-display"></div>
         <input type="text" id="hidden-input" autocomplete="off">
-
         <div id="bottom-bar">
             <button class="btn" onclick="nextPage()">Next Page</button>
             <button class="btn" style="background-color: #ca4754;" onclick="endGame()">End Now</button>
@@ -186,32 +95,19 @@
             Words typed: <span id="final-words">0</span> &nbsp;&nbsp;&nbsp;&nbsp; 
             Accuracy: <span id="final-acc">0%</span>
         </div>
-        
         <button class="btn" id="check-rank-btn" style="background-color: #e2b714; color: #323437; display: none;" onclick="goToLeaderboard()">Check Your Rank</button>
         <button class="btn" id="back-btn" onclick="goToMenu()">Back to Menu</button>
     </div>
 
     <div id="live-leaderboard-screen" class="screen">
-        <h1>Live Leaderboard</h1>
+        <h1 id="leaderboard-title">Live Leaderboard</h1>
         <div class="table-container">
             <table>
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Name</th>
-                        <th>Class</th>
-                        <th>Score</th>
-                        <th>Words</th>
-                        <th>Accuracy</th>
-                    </tr>
-                </thead>
-                <tbody id="live-leaderboard-body">
-                    <tr><td colspan="6" style="text-align:center;">Waiting for data...</td></tr>
-                </tbody>
+                <thead><tr><th>Rank</th><th>Name</th><th id="th-class">Class</th><th>Score</th><th>Words</th><th>Accuracy</th></tr></thead>
+                <tbody id="live-leaderboard-body"><tr><td colspan="6" style="text-align:center;">Waiting for data...</td></tr></tbody>
             </table>
         </div>
         <p style="font-size: 16px; color: #e2b714; margin-top: 20px;">Real-time updates active.</p>
-        <!-- 给返回按钮加个 id，方便用代码控制显示隐藏 -->
         <button class="btn" id="leaderboard-back-btn" style="margin-top: 20px;" onclick="goToMenu()">Back to Menu</button>
     </div>
 
@@ -220,18 +116,44 @@
         const SUPABASE_KEY = 'sb_publishable_wCDGJuauDWsoCalfsdQsGg_XW6vACBS';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        const PRACTICE_WORDS = "dream cover beach drink happy light music phone table water chair green smile sweet black bread cloud dance earth fruit glass heart house juice knife lemon money night ocean paper queen river sheep sugar tiger train voice watch young apple brave catch clean close color early empty event field floor fresh front funny grand human ideal inner joint known large lucky magic major minor model north offer order paint peace plant proud quick quiet radio ready right round share short small sound space speak sport stand start stone story study thank think three today touch under visit white world write".split(" ");
-        const COMPETITION_WORDS = "achieve balance capture declare effects factory general harvest improve journey kitchen library machine natural observe prepare quality reserve service travel unusual village welcome yellow ability brother culture develop evening forward history include justice knowing leading medical network outside private quickly respect science teacher uniform various western working ancient benefit concern discuss economy feature improve library measure nothing operate project quality receive special tonight village weather account brought central digital element freedom greater husband initial kingdom mention obvious promise request station student thought usually welcome article between chapter disease evening further history include journey machine natural outside".split(" ");
+        // ==================== 全新硬核词库 (600词，共用) ====================
+        const WORD_BANK = `acre afterlife archaeology chamber channel core corridor distinct elite engineer found gap glory interior lion role royal sole stairs surface
+        agreement arise benefactor blacksmith chimney compensate encounter exceed forge humble iron ladder modest occupy penny preach prosper province satisfaction sustain
+        acquire awkward caretaker deceive discourage fake hatred hut inferior lodge neglect newcomer offense overlook repay ridiculous satisfactory shepherd venture wheat
+        alley ax bunch chore decent disgraceful elbow grateful irritate kid loose offend overnight persist pine scar sensation sled tease valentine
+        acquaint cemetery creature curse disguise fancy flashlight hood inhabitant nourish pirate publication riddle rot shortly skeleton spoil starve thrill wicked
+        alert broadcast bulletin bump chop closet console district drawer endure execute grasp rear senator skull stir tap tremendous underneath worm
+        abandon ambitious bark bay brilliant chin complaint deaf enthusiastic expedition horizon loyal mayor mutual overweight refuge restore rub senses veterinarian
+        anniversary arithmetic ashamed burst carpenter coal couch drip elegant fabric highlands ivory mill needle polish sew shed thread trim upwards
+        ally boast bounce bully carbohydrate crawl defeat dial dominant entire mercy nod opponent quarrel rival sore sting strain torture wrestle
+        absence aloud bald blanket creep divorce imitate infant kidnap nap nowhere pat relief reproduce rhyme suck urgent vanish wagon wrinkle
+        architecture basket bloom canoe carpet cousin desk gallery guest host July modern museum pink plane refrigerator temperature theater upper welcome
+        anticipate barrel beam casual caution contrary deliberate dissolve explode fasten germ kit puff rag scatter scent steel swift toss triumph
+        aboard bitter bullet devil drift enforce fountain harbor inhabit march millionaire port sheriff startle sweat trigger unify vessel voyage worship
+        apprentice assure bandage bleed bond chef crown departure diligent emperor fiber horrible impolite kneel luxury massive panic priority robe scold
+        affair assembly bless cereal cheerful diameter exploit famine harvest merry nut pardon pharaoh ripe roast routine scheme slim stove theft
+        adolescent aptitude compliment hinder journalism jury justice liberty literary pharmacy pill presume privacy punishment sensible slice sorrow straw swell tidy
+        affection agency ash confine dismiss erupt fate lava miserable navigate originate remainder retrieve shallow slope span superstition sympathy vibrate wander
+        armor blaze boom cliff flame independence invasion knight lightning rebel retreat revolution spear steep summit thunder troops warrior withdraw yield
+        bench daisy dispute empty horror incident mist object orphan plot pregnant rage revenge shame sigh sneak spare stem supper tender
+        beneath cub dawn dissatisfied ease evident hail howl leap magnificent necessity outcome pile profound seize squeeze supreme terrific trait vital
+        attack breast cancer cancerous cell cigarette code cure destruction DNA extensive female furthermore gene inherit link male population result sugar
+        accommodate circus coincide commission dose dye extent gender headline informal inquire messenger peer portrait pose ranch steer stripe tame tempt
+        ban cautious confess cottage daytime desperate exhausting fade fierce gamble lawn mow outlaw prospect purse rod seldom shave terrified wizard
+        abroad airline audience bargain brief currency data domestic draft gather hobby income jet maximum official recommend refer remote sleepless volume
+        circulate consequent derive drown dynasty fraction frost illusion invade lieutenant marine merit navy polar ray resign suicide tremble underlying via
+        alter aside autumn blend collapse crush curve disgusting drain embrace envy fireworks flour fuse ginger jealous paste receipt wipe wire
+        acknowledge ambassador blonde conquer drag exaggerate heritage insult meanwhile necklace noble precious prejudice rumor sin spectacle stack suspicious tin vase
+        ache arctic canal chemist chill congress diary descend grocer hesitate institution jog merchant poke postpone splash stubborn suburb tide tragedy
+        bomb certificate circumstance coffin cope criticism devastate frown gaze glance grief groom license microscope nuclear portray rotate souvenir submarine trace
+        coastline deter devise distance expertise fracture headache implement insight limb might optimism proficient raft ridge shoulder shove spouse thrust tolerate`.split(/\s+/);
 
         let state = {
             mode: "practice", pageIndex: 0, targetText: "", typedText: "",
             timerId: null, isPlaying: false, timeLimit: 30,
             baseGreen: 0, baseTyped: 0, baseWords: 0,
-            finalStats: {},
-            liveInterval: null,
-            currentUserId: null,
-            currentName: "",
-            currentClass: ""
+            finalStats: {}, liveInterval: null,
+            currentUserId: null, currentName: "", currentClass: "", currentRole: "student"
         };
 
         function switchScreen(screenId) {
@@ -239,312 +161,236 @@
             document.getElementById(screenId).style.display = 'flex';
         }
 
-        function goToMenu() {
-            if(state.liveInterval) {
-                clearInterval(state.liveInterval);
-                state.liveInterval = null;
-            }
-            switchScreen('main-menu');
+        function goToMenu() { 
+            if(state.liveInterval) { clearInterval(state.liveInterval); state.liveInterval = null; } 
+            switchScreen('main-menu'); 
         }
+        
+        function showRoleSelect() { switchScreen('role-select-screen'); }
+        function showLeaderboardSelect() { switchScreen('leaderboard-select-screen'); }
 
-        function viewLeaderboardFromMenu() {
+        function viewLeaderboard(type) {
             state.currentUserId = null; 
-            switchScreen('live-leaderboard-screen');
-            // 旁观者进来看，显示返回按钮
-            document.getElementById('leaderboard-back-btn').style.display = 'block';
-            startLiveLeaderboard();
+            document.getElementById('leaderboard-back-btn').style.display = 'block'; 
+            
+            if (type === 'teacher') {
+                document.getElementById('leaderboard-title').innerText = "Teacher Leaderboard";
+                document.getElementById('th-class').style.display = "none";
+                switchScreen('live-leaderboard-screen'); 
+                startLiveLeaderboard("teacher");
+            } else if (type === 'student') {
+                document.getElementById('leaderboard-title').innerText = "Student Leaderboard";
+                document.getElementById('th-class').style.display = "table-cell";
+                switchScreen('live-leaderboard-screen'); 
+                startLiveLeaderboard("student");
+            } else {
+                document.getElementById('leaderboard-title').innerText = "Overall Leaderboard";
+                document.getElementById('th-class').style.display = "table-cell";
+                switchScreen('live-leaderboard-screen'); 
+                startLiveLeaderboard("all"); 
+            }
         }
 
-        function showRegistration() {
-            document.getElementById('reg-name').value = "";
-            document.getElementById('reg-class').value = "";
-            document.getElementById('reg-msg').innerText = "";
-            switchScreen('register-screen');
+        function showLogin(role) {
+            state.currentRole = role;
+            const titleEl = document.getElementById('login-title');
+            const nameEl = document.getElementById('login-name');
+            const passEl = document.getElementById('login-password');
+            
+            if (role === 'student') {
+                titleEl.innerText = 'Student Login';
+                nameEl.placeholder = '请输入英文名+中文名';
+                passEl.placeholder = '请输入密码';
+            } else {
+                titleEl.innerText = 'Teacher Login';
+                nameEl.placeholder = 'Please enter your name';
+                passEl.placeholder = 'Please enter the password';
+            }
+
+            nameEl.value = "";
+            passEl.value = "";
+            document.getElementById('login-msg').innerText = "";
+            switchScreen('login-screen');
         }
 
-        async function validateAndRegister() {
-            const name = document.getElementById('reg-name').value.trim();
-            const className = document.getElementById('reg-class').value.trim();
-            const msgEl = document.getElementById('reg-msg');
+        async function validateLogin() {
+            const rawName = document.getElementById('login-name').value.trim();
+            const rawPassword = document.getElementById('login-password').value.trim();
+            const msgEl = document.getElementById('login-msg');
 
-            if (!name) { 
-                msgEl.innerText = "Name cannot be empty!\n(姓名不可为空)"; 
+            if (!rawName || !rawPassword) { 
+                msgEl.style.color = "#ca4754";
+                msgEl.innerText = "Name and Password cannot be empty!\n(姓名和密码不可为空)"; 
                 return; 
             }
-            if (!className) { 
-                msgEl.innerText = "Class cannot be empty!\n(班级不可为空)"; 
-                return; 
-            }
-
-            msgEl.style.color = "#e2b714";
+            msgEl.style.color = "#e2b714"; 
             msgEl.innerText = "Checking...";
 
-            const { data, error } = await supabaseClient
-                .from('scores')
-                .select('id')
-                .eq('player_name', name);
+            let student = null;
 
-            if (error) { 
-                msgEl.style.color = "#ca4754"; 
-                msgEl.innerText = "Database error. Please try again."; 
-                return; 
-            }
-            
-            if (data && data.length > 0) {
-                msgEl.style.color = "#ca4754";
-                msgEl.innerText = "This name is already registered!\n(该姓名已存在，请换一个)";
-                return;
-            }
-
-            msgEl.style.color = "#4caf50";
-            msgEl.innerText = "Registering...";
-
-            const { data: insertData, error: insertError } = await supabaseClient
-                .from('scores')
-                .insert([{ 
-                    player_name: name, 
-                    class_name: className, 
-                    score: 0, 
-                    words_typed: 0,
-                    accuracy: 0
-                }])
-                .select();
-
-            if (insertError) {
-                msgEl.style.color = "#ca4754";
-                msgEl.innerText = "Error: " + insertError.message;
+            if (state.currentRole === 'teacher') {
+                const { data, error } = await supabaseClient.from('teachers').select('*').ilike('name', rawName);
+                if (error) { msgEl.innerText = "Database error."; return; }
+                if (!data || data.length === 0) {
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Teacher does not exist!\n(该老师不存在)"; return;
+                }
+                student = data[0];
+                if (String(student.password) !== rawPassword) {
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; return;
+                }
+                state.currentClass = "Teacher"; 
+                
+                // 【修复】老师登录成功，给老师的 play_times +1
+                let newPlayTimes = (student.play_times || 0) + 1;
+                await supabaseClient.from('teachers').update({ play_times: newPlayTimes }).eq('name', student.name);
+                
             } else {
-                state.currentUserId = insertData[0].id;
-                state.currentName = name;
-                state.currentClass = className;
-                startCompetitionGame();
+                const { data, error } = await supabaseClient.from('students').select('*').ilike('name', rawName);
+                if (error) { msgEl.innerText = "Database error."; return; }
+                if (!data || data.length === 0) {
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Student does not exist!\n(该学生不存在)"; return;
+                }
+                student = data[0];
+                if (String(student.password) !== rawPassword) {
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; return;
+                }
+                state.currentClass = student.class_name || "HKA"; 
+                
+                // 【修复】学生登录成功，给学生的 play_times +1
+                let newPlayTimes = (student.play_times || 0) + 1;
+                await supabaseClient.from('students').update({ play_times: newPlayTimes }).eq('name', student.name);
+            }
+
+            msgEl.style.color = "#4caf50"; 
+            msgEl.innerText = "Login successful. Preparing game...";
+            
+            state.currentName = student.name; 
+            
+            const { data: insertData, error: insertError } = await supabaseClient.from('scores').insert([{ 
+                player_name: state.currentName, 
+                class_name: state.currentClass, 
+                score: 0, 
+                words_typed: 0, 
+                accuracy: 0 
+            }]).select();
+
+            if (insertError) { 
+                msgEl.style.color = "#ca4754"; 
+                msgEl.innerText = "Error: " + insertError.message; 
+            } else { 
+                state.currentUserId = insertData[0].id; 
+                startCompetitionGame(); 
+                setTimeout(() => { document.getElementById('hidden-input').focus(); }, 100);
             }
         }
 
-        function startPractice() {
-            state.mode = "practice";
-            state.timeLimit = 30;
-            state.currentUserId = null;
-            initGame();
-        }
-
-        function startCompetitionGame() {
-            state.mode = "competition";
-            state.timeLimit = 60;
-            initGame();
-        }
-
-        function initGame() {
-            state.pageIndex = 0;
-            state.baseGreen = 0; state.baseTyped = 0; state.baseWords = 0;
-            if(state.liveInterval) { clearInterval(state.liveInterval); state.liveInterval = null; }
-            switchScreen('game-screen');
-            
-            document.getElementById('timer').innerText = "⏱ " + state.timeLimit + "s";
-            
-            loadNewPage();
+        function startPractice() { state.mode = "practice"; state.timeLimit = 30; state.currentUserId = null; initGame(); }
+        function startCompetitionGame() { state.mode = "competition"; state.timeLimit = 60; initGame(); }
+        
+        function initGame() { 
+            state.pageIndex = 0; state.baseGreen = 0; state.baseTyped = 0; state.baseWords = 0; 
+            if(state.liveInterval) { clearInterval(state.liveInterval); state.liveInterval = null; } 
+            switchScreen('game-screen'); 
+            document.getElementById('timer').innerText = "⏱ " + state.timeLimit + "s"; 
+            loadNewPage(); 
         }
 
         function loadNewPage() {
-            state.pageIndex++;
-            state.typedText = "";
-            document.getElementById('hidden-input').value = "";
+            state.pageIndex++; state.typedText = ""; document.getElementById('hidden-input').value = "";
             
-            let baseWords = state.mode === 'practice' ? PRACTICE_WORDS : COMPETITION_WORDS;
-            let words = state.pageIndex % 2 === 1 ? baseWords.slice(0, 50) : baseWords.slice(50, 100);
+            let words = [...WORD_BANK]; 
+            words.sort(() => Math.random() - 0.5); 
+            state.targetText = words.slice(0, 50).join(" "); 
             
-            words.sort(() => Math.random() - 0.5);
-            state.targetText = words.join(" ");
-            
-            renderText();
-            updateStats();
-            document.getElementById('hidden-input').focus();
+            renderText(); updateStats(); document.getElementById('hidden-input').focus();
         }
 
-        function nextPage() {
-            let stats = updateStats();
-            state.baseGreen = stats.totalGreen;
-            state.baseTyped = stats.totalTyped;
-            state.baseWords = stats.totalWords;
-            loadNewPage();
-        }
+        function nextPage() { let stats = updateStats(); state.baseGreen = stats.totalGreen; state.baseTyped = stats.totalTyped; state.baseWords = stats.totalWords; loadNewPage(); }
 
         function renderText() {
             let html = "";
             for (let i = 0; i < state.targetText.length; i++) {
-                let char = state.targetText[i];
-                if (char === " ") char = "&nbsp;";
-                
-                let className = "untyped";
-                if (i < state.typedText.length) {
-                    if (state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) {
-                        className = "correct";
-                    } else {
-                        className = "wrong";
-                    }
-                } else if (i === state.typedText.length) {
-                    html += `<span class="letter untyped caret">${char}</span>`;
-                    continue;
-                }
+                let char = state.targetText[i]; if (char === " ") char = "&nbsp;"; let className = "untyped";
+                if (i < state.typedText.length) { className = (state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) ? "correct" : "wrong"; } else if (i === state.typedText.length) { html += `<span class="letter untyped caret">${char}</span>`; continue; }
                 html += `<span class="letter ${className}">${char}</span>`;
             }
             document.getElementById('text-display').innerHTML = html;
         }
 
         function updateStats() {
-            let pageGreen = 0;
-            for (let i = 0; i < state.typedText.length; i++) {
-                if (i < state.targetText.length && state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) {
-                    pageGreen++;
-                }
-            }
-            
-            let pageWords = 0;
-            let currentIdx = 0;
-            let targetWords = state.targetText.split(" ");
-            for (let w of targetWords) {
-                if (state.typedText.length >= currentIdx + w.length) {
-                    pageWords++;
-                } else break;
-                currentIdx += w.length + 1;
-            }
-
-            let totalGreen = state.baseGreen + pageGreen;
-            let totalTyped = state.baseTyped + state.typedText.length;
-            let totalWords = state.baseWords + pageWords;
-            let acc = totalTyped > 0 ? Math.round((totalGreen / totalTyped) * 100) : 100;
-            
-            document.getElementById('words-typed').innerText = totalWords;
-            document.getElementById('accuracy').innerText = acc + "%";
-            
-            return { totalGreen, totalTyped, totalWords, acc };
+            let pageGreen = 0; for (let i = 0; i < state.typedText.length; i++) { if (i < state.targetText.length && state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) pageGreen++; }
+            let pageWords = 0; let currentIdx = 0; for (let w of state.targetText.split(" ")) { if (state.typedText.length >= currentIdx + w.length) pageWords++; else break; currentIdx += w.length + 1; }
+            let totalGreen = state.baseGreen + pageGreen; let totalTyped = state.baseTyped + state.typedText.length; let totalWords = state.baseWords + pageWords; let acc = totalTyped > 0 ? Math.round((totalGreen / totalTyped) * 100) : 100;
+            document.getElementById('words-typed').innerText = totalWords; document.getElementById('accuracy').innerText = acc + "%"; return { totalGreen, totalTyped, totalWords, acc };
         }
 
         document.getElementById('hidden-input').addEventListener('input', (e) => {
-            let typed = e.target.value;
-            if (!state.isPlaying && typed.length > 0) {
-                state.isPlaying = true;
-                startTimer();
-            }
-            if (typed.length > state.targetText.length) {
-                typed = typed.slice(0, state.targetText.length);
-                e.target.value = typed;
-            }
-            let idx = typed.length - 1;
-            if (idx >= 0 && typed[idx] === " " && state.targetText[idx] !== " ") {
-                typed = typed.slice(0, -1);
-                e.target.value = typed;
-            }
-            state.typedText = typed;
-            renderText();
-            updateStats();
+            let typed = e.target.value; if (!state.isPlaying && typed.length > 0) { state.isPlaying = true; startTimer(); }
+            if (typed.length > state.targetText.length) { typed = typed.slice(0, state.targetText.length); e.target.value = typed; }
+            let idx = typed.length - 1; if (idx >= 0 && typed[idx] === " " && state.targetText[idx] !== " ") { typed = typed.slice(0, -1); e.target.value = typed; }
+            state.typedText = typed; renderText(); updateStats();
         });
 
         function startTimer() {
-            let timeLeft = state.timeLimit;
-            let timerEl = document.getElementById('timer');
-            timerEl.innerText = "⏱ " + timeLeft + "s";
-            
-            state.timerId = setInterval(() => {
-                timeLeft--;
-                if (timeLeft <= 0) {
-                    timerEl.innerText = "⏱ 0s";
-                    endGame();
-                } else {
-                    timerEl.innerText = "⏱ " + timeLeft + "s";
-                }
-            }, 1000);
+            let timeLeft = state.timeLimit; let timerEl = document.getElementById('timer'); timerEl.innerText = "⏱ " + timeLeft + "s";
+            state.timerId = setInterval(() => { timeLeft--; if (timeLeft <= 0) { timerEl.innerText = "⏱ 0s"; endGame(); } else { timerEl.innerText = "⏱ " + timeLeft + "s"; } }, 1000);
         }
 
         async function endGame() {
-            clearInterval(state.timerId);
-            state.isPlaying = false;
+            clearInterval(state.timerId); state.isPlaying = false;
+            let stats = updateStats(); let rawScore = stats.totalWords * (stats.acc / 100); let scoreStr = Number.isInteger(rawScore) ? rawScore : rawScore.toFixed(1);
+            let scoreText = `Score: ${scoreStr}`; if (state.mode === 'practice') scoreText += " (Practice)";
+            document.getElementById('final-score').innerText = scoreText; document.getElementById('final-words').innerText = stats.totalWords; document.getElementById('final-acc').innerText = stats.acc + "%";
+            state.finalStats = { score: parseFloat(scoreStr), words: stats.totalWords, accuracy: stats.acc }; switchScreen('result-screen');
+            const checkBtn = document.getElementById('check-rank-btn'); const backBtn = document.getElementById('back-btn');
+            if (state.mode === 'competition') { backBtn.style.display = 'none'; checkBtn.style.display = 'block'; await supabaseClient.from('scores').update({ score: state.finalStats.score, words_typed: state.finalStats.words, accuracy: state.finalStats.accuracy }).eq('id', state.currentUserId); } else { backBtn.style.display = 'block'; checkBtn.style.display = 'none'; }
+        }
+
+        function goToLeaderboard() { 
+            switchScreen('live-leaderboard-screen'); 
+            document.getElementById('leaderboard-back-btn').style.display = 'block'; 
             
-            let stats = updateStats();
-            let rawScore = stats.totalWords * (stats.acc / 100);
-            let scoreStr = Number.isInteger(rawScore) ? rawScore : rawScore.toFixed(1);
-            
-            let scoreText = `Score: ${scoreStr}`;
-            if (state.mode === 'practice') scoreText += " (Practice)";
-            
-            document.getElementById('final-score').innerText = scoreText;
-            document.getElementById('final-words').innerText = stats.totalWords;
-            document.getElementById('final-acc').innerText = stats.acc + "%";
-            
-            state.finalStats = { score: parseFloat(scoreStr), words: stats.totalWords, accuracy: stats.acc };
-            switchScreen('result-screen');
-            
-            const checkBtn = document.getElementById('check-rank-btn');
-            const backBtn = document.getElementById('back-btn');
-            
-            if (state.mode === 'competition') {
-                backBtn.style.display = 'none'; 
-                checkBtn.style.display = 'block';
-                
-                const { error } = await supabaseClient
-                    .from('scores')
-                    .update({ 
-                        score: state.finalStats.score, 
-                        words_typed: state.finalStats.words,
-                        accuracy: state.finalStats.accuracy
-                    })
-                    .eq('id', state.currentUserId);
-                    
-                if(error) console.error("Failed to update score:", error);
-                
+            if (state.currentRole === 'teacher') {
+                document.getElementById('leaderboard-title').innerText = "Teacher Leaderboard";
+                document.getElementById('th-class').style.display = "none"; 
+                startLiveLeaderboard("teacher");
             } else {
-                backBtn.style.display = 'block';
-                checkBtn.style.display = 'none';
+                document.getElementById('leaderboard-title').innerText = "Student Leaderboard";
+                document.getElementById('th-class').style.display = "table-cell";
+                startLiveLeaderboard("student");
             }
         }
-
-        function goToLeaderboard() {
-            switchScreen('live-leaderboard-screen');
-            // 比赛完跳过来的，隐藏返回按钮
-            document.getElementById('leaderboard-back-btn').style.display = 'none';
-            startLiveLeaderboard();
+        
+        function startLiveLeaderboard(filterType) { 
+            const tbody = document.getElementById('live-leaderboard-body'); 
+            fetchLeaderboardData(tbody, filterType); 
+            state.liveInterval = setInterval(() => { fetchLeaderboardData(tbody, filterType); }, 3000); 
         }
 
-        function startLiveLeaderboard() {
-            const tbody = document.getElementById('live-leaderboard-body');
-            fetchLeaderboardData(tbody);
-            state.liveInterval = setInterval(() => {
-                fetchLeaderboardData(tbody);
-            }, 3000);
-        }
+        async function fetchLeaderboardData(tbody, filterType) {
+            let query = supabaseClient.from('scores').select('*').order('score', { ascending: false });
+            
+            if (filterType === "teacher") {
+                query = query.eq('class_name', 'Teacher');
+            } else if (filterType === "student") {
+                query = query.neq('class_name', 'Teacher');
+            }
 
-        async function fetchLeaderboardData(tbody) {
-            const { data, error } = await supabaseClient
-                .from('scores')
-                .select('*')
-                .order('score', { ascending: false });
-
-            if (error) return;
-
+            const { data, error } = await query; 
+            if (error) return; 
+            
             tbody.innerHTML = "";
-            data.forEach((row, index) => {
-                let className = row.class_name ? row.class_name : '-';
-                let isSelf = (state.currentUserId && row.id === state.currentUserId);
-                let rowClass = isSelf ? 'class="highlight-row"' : '';
-
-                tbody.innerHTML += `
-                    <tr ${rowClass}>
-                        <td>${index + 1}</td>
-                        <td>${row.player_name}</td>
-                        <td>${className}</td>
-                        <td style="color:#e2b714; font-weight:bold;">${row.score}</td>
-                        <td>${row.words_typed}</td>
-                        <td>${row.accuracy}%</td>
-                    </tr>
-                `;
+            data.forEach((row, index) => { 
+                let className = row.class_name ? row.class_name : '-'; 
+                let isSelf = (state.currentUserId && row.id === state.currentUserId); 
+                let rowClass = isSelf ? 'class="highlight-row"' : ''; 
+                let cell = filterType === "teacher" ? '' : `<td>${className}</td>`;
+                
+                tbody.innerHTML += `<tr ${rowClass}><td>${index + 1}</td><td>${row.player_name}</td>${cell}<td style="color:#e2b714; font-weight:bold;">${row.score}</td><td>${row.words_typed}</td><td>${row.accuracy}%</td></tr>`; 
             });
         }
 
-        document.addEventListener('click', () => {
-            if (state.isPlaying || document.getElementById('game-screen').style.display === 'flex') {
-                document.getElementById('hidden-input').focus();
-            }
-        });
+        document.addEventListener('click', () => { if (state.isPlaying || document.getElementById('game-screen').style.display === 'flex') { document.getElementById('hidden-input').focus(); } });
     </script>
 </body>
 </html>
