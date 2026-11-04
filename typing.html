@@ -16,35 +16,14 @@
         .stats { text-align: right; color: #646669; font-size: 18px; line-height: 1.5; }
         .stats span { color: #e2b714; font-size: 24px; font-weight: bold; }
         
-        /* 退回最稳妥的原始换行模式 */
-        #text-display { 
-            width: 90%; 
-            max-width: 1200px; 
-            line-height: 1.8; 
-            letter-spacing: 1px; 
-            position: relative; 
-            margin-top: 50px; 
-            text-align: left; 
-            word-wrap: break-word; 
-        }
+        #text-display { width: 90%; max-width: 1200px; line-height: 1.8; letter-spacing: 1px; position: relative; margin-top: 50px; text-align: left; word-wrap: break-word; }
 
         span.letter { display: inline-block; position: relative; }
         span.untyped { color: #646669; }
         span.correct { color: #d1d0c5; }
         span.wrong { color: #ca4754; text-decoration: underline; }
         
-        /* 经典黄色光标 */
-        span.caret::before { 
-            content: ''; 
-            position: absolute; 
-            left: -2px; 
-            top: 0; 
-            width: 3px; 
-            height: 100%; 
-            background-color: #e2b714; 
-            animation: blink 1s infinite; 
-        }
-        
+        span.caret::before { content: ''; position: absolute; left: -2px; top: 0; width: 3px; height: 100%; background-color: #e2b714; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
         #hidden-input { position: absolute; opacity: 0; z-index: -1; }
         #bottom-bar { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 15px; }
@@ -181,7 +160,9 @@
             finalStats: {}, liveInterval: null,
             currentUserId: null, currentName: "", currentClass: "", currentRole: "student",
             isCheating: false,
-            isLoggingIn: false 
+            isLoggingIn: false,
+            lastInputTime: 0,
+            lastInputLength: 0
         };
 
         function switchScreen(screenId) {
@@ -336,6 +317,8 @@
         
         function initGame() { 
             state.pageIndex = 0; state.baseGreen = 0; state.baseTyped = 0; state.baseWords = 0; state.isCheating = false;
+            state.lastInputTime = performance.now();
+            state.lastInputLength = 0;
             if(state.liveInterval) { clearInterval(state.liveInterval); state.liveInterval = null; } 
             switchScreen('game-screen'); 
             document.getElementById('timer').innerText = "⏱ " + state.timeLimit + "s"; 
@@ -371,6 +354,7 @@
             document.getElementById('words-typed').innerText = totalWords; document.getElementById('accuracy').innerText = acc + "%"; return { totalGreen, totalTyped, totalWords, acc };
         }
 
+        // 拦截电脑端的粘贴事件
         document.getElementById('hidden-input').addEventListener('paste', (e) => {
             e.preventDefault();
             return false;
@@ -380,6 +364,22 @@
             if (state.isCheating) return; 
 
             let typed = e.target.value; 
+            let currentTime = performance.now();
+            let deltaLength = typed.length - state.lastInputLength;
+            let deltaTime = currentTime - state.lastInputTime;
+
+            // 【手机端防作弊终极手段】单次增加字符超过 2 个（说明是粘贴/快捷输入），或者极其离谱的速度
+            if (deltaLength > 2) {
+                state.isCheating = true;
+                clearInterval(state.timerId); 
+                alert("警告：检测到非法粘贴，成绩作废！");
+                endGame();
+                return;
+            }
+
+            state.lastInputTime = currentTime;
+            state.lastInputLength = typed.length;
+
             if (!state.isPlaying && typed.length > 0) { state.isPlaying = true; startTimer(); }
             if (typed.length > state.targetText.length) { typed = typed.slice(0, state.targetText.length); e.target.value = typed; }
             let idx = typed.length - 1; 
@@ -454,7 +454,6 @@
         }
 
         async function fetchLeaderboardData(tbody, filterType) {
-            // 【已修改】去掉了 .gt('score', 0) 过滤，现在 0 分也会显示
             let query = supabaseClient.from('scores').select('*').order('score', { ascending: false });
             
             if (filterType === "teacher") {
