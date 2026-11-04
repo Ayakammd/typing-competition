@@ -155,7 +155,8 @@
             timerId: null, isPlaying: false, timeLimit: 30,
             baseGreen: 0, baseTyped: 0, baseWords: 0,
             finalStats: {}, liveInterval: null,
-            currentUserId: null, currentName: "", currentClass: "", currentRole: "student", bonusScore: 0
+            currentUserId: null, currentName: "", currentClass: "", currentRole: "student", bonusScore: 0,
+            isCheating: false
         };
 
         function switchScreen(screenId) {
@@ -242,7 +243,6 @@
                     msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; return;
                 }
                 
-                // 【核心恢复】老师只能比赛一次
                 if (student.play_times >= 1) {
                     msgEl.style.color = "#ca4754"; 
                     msgEl.innerText = "You have already participated!\n(该账号已参赛)"; 
@@ -277,7 +277,6 @@
                     }
                 }
 
-                // 【核心恢复】学生只能比赛一次
                 if (student.play_times >= 1) {
                     msgEl.style.color = "#ca4754"; 
                     msgEl.innerText = "You have already participated!\n(该账号已参赛)"; 
@@ -318,11 +317,11 @@
             }
         }
 
-        function startPractice() { state.mode = "practice"; state.timeLimit = 30; state.currentUserId = null; state.bonusScore = 0; initGame(); }
+        function startPractice() { state.mode = "practice"; state.timeLimit = 30; state.currentUserId = null; state.bonusScore = 0; state.isCheating = false; initGame(); }
         function startCompetitionGame() { state.mode = "competition"; state.timeLimit = 60; initGame(); }
         
         function initGame() { 
-            state.pageIndex = 0; state.baseGreen = 0; state.baseTyped = 0; state.baseWords = 0; 
+            state.pageIndex = 0; state.baseGreen = 0; state.baseTyped = 0; state.baseWords = 0; state.isCheating = false;
             if(state.liveInterval) { clearInterval(state.liveInterval); state.liveInterval = null; } 
             switchScreen('game-screen'); 
             document.getElementById('timer').innerText = "⏱ " + state.timeLimit + "s"; 
@@ -358,11 +357,33 @@
             document.getElementById('words-typed').innerText = totalWords; document.getElementById('accuracy').innerText = acc + "%"; return { totalGreen, totalTyped, totalWords, acc };
         }
 
+        // 【防御】彻底禁用粘贴
+        document.getElementById('hidden-input').addEventListener('paste', (e) => {
+            e.preventDefault();
+            return false;
+        });
+
         document.getElementById('hidden-input').addEventListener('input', (e) => {
-            let typed = e.target.value; if (!state.isPlaying && typed.length > 0) { state.isPlaying = true; startTimer(); }
+            if (state.isCheating) return; // 如果已经被判定作弊，就不处理输入了
+
+            let typed = e.target.value; 
+            if (!state.isPlaying && typed.length > 0) { state.isPlaying = true; startTimer(); }
             if (typed.length > state.targetText.length) { typed = typed.slice(0, state.targetText.length); e.target.value = typed; }
-            let idx = typed.length - 1; if (idx >= 0 && typed[idx] === " " && state.targetText[idx] !== " ") { typed = typed.slice(0, -1); e.target.value = typed; }
-            state.typedText = typed; renderText(); updateStats();
+            let idx = typed.length - 1; 
+            if (idx >= 0 && typed[idx] === " " && state.targetText[idx] !== " ") { typed = typed.slice(0, -1); e.target.value = typed; }
+            
+            state.typedText = typed; 
+            renderText(); 
+            let stats = updateStats();
+
+            // 【绝杀】实时监控当前得分，如果超过 500 分，立即判定作弊
+            let currentTotalScore = (stats.totalWords * (stats.acc / 100)) + state.bonusScore;
+            if (currentTotalScore > 500) {
+                state.isCheating = true;
+                clearInterval(state.timerId); // 停止倒计时
+                alert("警告：检测到异常分数（作弊行为），成绩已作废，比赛结束！");
+                endGame(); // 直接进入结算（分数会在 endGame 里清空）
+            }
         });
 
         function startTimer() {
@@ -372,17 +393,20 @@
 
         async function endGame() {
             clearInterval(state.timerId); state.isPlaying = false;
-            let stats = updateStats(); let rawScore = stats.totalWords * (stats.acc / 100);
+            let stats = updateStats(); 
+            let rawScore = stats.totalWords * (stats.acc / 100);
             
-            let finalTotalScore = rawScore + state.bonusScore;
+            // 如果被判定作弊，分数直接归零
+            let finalTotalScore = state.isCheating ? 0 : (rawScore + state.bonusScore);
 
             let scoreStr = Number.isInteger(finalTotalScore) ? finalTotalScore : finalTotalScore.toFixed(1);
             let scoreText = `Score: ${scoreStr}`; if (state.mode === 'practice') scoreText += " (Practice)";
 
             document.getElementById('final-score').innerText = scoreText;
-            document.getElementById('final-words').innerText = stats.totalWords; document.getElementById('final-acc').innerText = stats.acc + "%";
+            document.getElementById('final-words').innerText = stats.totalWords; 
+            document.getElementById('final-acc').innerText = state.isCheating ? "0%" : stats.acc + "%";
             
-            state.finalStats = { score: parseFloat(scoreStr), words: stats.totalWords, accuracy: stats.acc }; 
+            state.finalStats = { score: parseFloat(scoreStr), words: state.isCheating ? 0 : stats.totalWords, accuracy: state.isCheating ? 0 : stats.acc }; 
             switchScreen('result-screen');
             
             const checkBtn = document.getElementById('check-rank-btn'); const backBtn = document.getElementById('back-btn');
