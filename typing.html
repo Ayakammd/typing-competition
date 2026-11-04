@@ -15,7 +15,25 @@
         #top-bar { position: absolute; top: 30px; width: 90%; display: flex; justify-content: space-between; font-size: 24px; color: #e2b714; }
         .stats { text-align: right; color: #646669; font-size: 18px; line-height: 1.5; }
         .stats span { color: #e2b714; font-size: 24px; font-weight: bold; }
-        #text-display { width: 90%; max-width: 1200px; line-height: 1.6; letter-spacing: 1px; position: relative; margin-top: 50px; word-wrap: break-word; text-align: left; }
+        
+        /* 显示文本的主容器 */
+        #text-display { 
+            width: 90%; 
+            max-width: 1200px; 
+            line-height: 1.8; /* 稍微加大行高 */
+            letter-spacing: 1px; 
+            position: relative; 
+            margin-top: 50px; 
+            text-align: left; 
+        }
+        
+        /* 【核心修复】用行内块把整个单词打包，防止单词被腰斩 */
+        .word-wrapper {
+            display: inline-block;
+            white-space: nowrap; /* 单词内部的字母绝对不换行 */
+            margin-right: 10px; /* 单词之间的空格距离 */
+        }
+
         span.letter { display: inline-block; position: relative; }
         span.untyped { color: #646669; }
         span.correct { color: #d1d0c5; }
@@ -340,12 +358,38 @@
 
         function nextPage() { let stats = updateStats(); state.baseGreen = stats.totalGreen; state.baseTyped = stats.totalTyped; state.baseWords = stats.totalWords; loadNewPage(); }
 
+        // 【排版修复】用 word-wrapper 将整个单词打包渲染
         function renderText() {
             let html = "";
+            let currentWordHtml = "";
+            let currentWordLength = 0; // 记录当前单词的起始下标
+            
             for (let i = 0; i < state.targetText.length; i++) {
-                let char = state.targetText[i]; if (char === " ") char = "&nbsp;"; let className = "untyped";
-                if (i < state.typedText.length) { className = (state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) ? "correct" : "wrong"; } else if (i === state.typedText.length) { html += `<span class="letter untyped caret">${char}</span>`; continue; }
-                html += `<span class="letter ${className}">${char}</span>`;
+                let char = state.targetText[i]; 
+                let displayChar = (char === " ") ? "&nbsp;" : char;
+                let className = "untyped";
+
+                if (i < state.typedText.length) {
+                    className = (state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) ? "correct" : "wrong";
+                } else if (i === state.typedText.length) {
+                    // 光标在当前字母
+                    currentWordHtml += `<span class="letter untyped caret">${displayChar}</span>`;
+                    currentWordLength++;
+                    continue; // 跳过下方的普通拼接，直接进入下一个循环
+                }
+                
+                currentWordHtml += `<span class="letter ${className}">${displayChar}</span>`;
+                currentWordLength++;
+
+                // 如果遇到了空格，或者到了整个文本的末尾，就说明一个单词结束了
+                if (char === " " || i === state.targetText.length - 1) {
+                    // 将整个单词用 word-wrapper 包起来
+                    html += `<span class="word-wrapper">${currentWordHtml}</span>`;
+                    // 如果刚刚那个字符是空格，我们额外补一个空格给排版（因为之前把空格包进去了，这里替换一下做法）
+                    // 为了更稳妥，直接用普通的空白符隔开 span
+                    currentWordHtml = "";
+                    currentWordLength = 0;
+                }
             }
             document.getElementById('text-display').innerHTML = html;
         }
@@ -364,7 +408,7 @@
         });
 
         document.getElementById('hidden-input').addEventListener('input', (e) => {
-            if (state.isCheating) return; // 如果已经被判定作弊，就不处理输入了
+            if (state.isCheating) return; 
 
             let typed = e.target.value; 
             if (!state.isPlaying && typed.length > 0) { state.isPlaying = true; startTimer(); }
@@ -380,9 +424,9 @@
             let currentTotalScore = (stats.totalWords * (stats.acc / 100)) + state.bonusScore;
             if (currentTotalScore > 500) {
                 state.isCheating = true;
-                clearInterval(state.timerId); // 停止倒计时
+                clearInterval(state.timerId); 
                 alert("警告：检测到异常分数（作弊行为），成绩已作废，比赛结束！");
-                endGame(); // 直接进入结算（分数会在 endGame 里清空）
+                endGame(); 
             }
         });
 
@@ -396,7 +440,6 @@
             let stats = updateStats(); 
             let rawScore = stats.totalWords * (stats.acc / 100);
             
-            // 如果被判定作弊，分数直接归零
             let finalTotalScore = state.isCheating ? 0 : (rawScore + state.bonusScore);
 
             let scoreStr = Number.isInteger(finalTotalScore) ? finalTotalScore : finalTotalScore.toFixed(1);
