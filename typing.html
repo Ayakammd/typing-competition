@@ -16,29 +16,35 @@
         .stats { text-align: right; color: #646669; font-size: 18px; line-height: 1.5; }
         .stats span { color: #e2b714; font-size: 24px; font-weight: bold; }
         
-        /* 显示文本的主容器 */
+        /* 退回最稳妥的原始换行模式 */
         #text-display { 
             width: 90%; 
             max-width: 1200px; 
-            line-height: 1.8; /* 稍微加大行高 */
+            line-height: 1.8; 
             letter-spacing: 1px; 
             position: relative; 
             margin-top: 50px; 
             text-align: left; 
-        }
-        
-        /* 【核心修复】用行内块把整个单词打包，防止单词被腰斩 */
-        .word-wrapper {
-            display: inline-block;
-            white-space: nowrap; /* 单词内部的字母绝对不换行 */
-            margin-right: 10px; /* 单词之间的空格距离 */
+            word-wrap: break-word; 
         }
 
         span.letter { display: inline-block; position: relative; }
         span.untyped { color: #646669; }
         span.correct { color: #d1d0c5; }
         span.wrong { color: #ca4754; text-decoration: underline; }
-        span.caret::before { content: ''; position: absolute; left: -2px; top: 0; width: 3px; height: 100%; background-color: #e2b714; animation: blink 1s infinite; }
+        
+        /* 经典黄色光标 */
+        span.caret::before { 
+            content: ''; 
+            position: absolute; 
+            left: -2px; 
+            top: 0; 
+            width: 3px; 
+            height: 100%; 
+            background-color: #e2b714; 
+            animation: blink 1s infinite; 
+        }
+        
         @keyframes blink { 50% { opacity: 0; } }
         #hidden-input { position: absolute; opacity: 0; z-index: -1; }
         #bottom-bar { position: absolute; bottom: 30px; right: 30px; display: flex; gap: 15px; }
@@ -89,7 +95,7 @@
             <input type="text" id="login-name" class="name-input" placeholder="">
             <input type="password" id="login-password" class="name-input" placeholder="">
         </div>
-        <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; background-color: #4caf50;" onclick="validateLogin()">Login</button>
+        <button class="btn" id="btn-login-submit" style="width: 200px; padding: 12px; font-size: 18px; background-color: #4caf50;" onclick="validateLogin()">Login</button>
         <button class="btn" style="width: 200px; padding: 12px; font-size: 18px; margin-top: 10px;" onclick="showRoleSelect()">Cancel</button>
         <p id="login-msg" style="font-size: 18px; height: 50px; color: #ca4754; text-align: center; line-height: 1.2; white-space: pre-line;"></p>
     </div>
@@ -140,7 +146,7 @@
         const WORD_BANK = `acre afterlife archaeology chamber channel core corridor distinct elite engineer found gap glory interior lion role royal sole stairs surface
         agreement arise benefactor blacksmith chimney compensate encounter exceed forge humble iron ladder modest occupy penny preach prosper province satisfaction sustain
         acquire awkward caretaker deceive discourage fake hatred hut inferior lodge neglect newcomer offense overlook repay ridiculous satisfactory shepherd venture wheat
-        alley ax bunch chore decent disgraceful elbow grateful irritate kid loose offend overnight persist pine scar sensation sled tease valentine
+        alley ax bunch chore disgraceful elbow grateful irritate kid loose offend overnight persist pine scar sensation sled tease valentine
         acquaint cemetery creature curse disguise fancy flashlight hood inhabitant nourish pirate publication riddle rot shortly skeleton spoil starve thrill wicked
         alert broadcast bulletin bump chop closet console district drawer endure execute grasp rear senator skull stir tap tremendous underneath worm
         abandon ambitious bark bay brilliant chin complaint deaf enthusiastic expedition horizon loyal mayor mutual overweight refuge restore rub senses veterinarian
@@ -173,8 +179,9 @@
             timerId: null, isPlaying: false, timeLimit: 30,
             baseGreen: 0, baseTyped: 0, baseWords: 0,
             finalStats: {}, liveInterval: null,
-            currentUserId: null, currentName: "", currentClass: "", currentRole: "student", bonusScore: 0,
-            isCheating: false
+            currentUserId: null, currentName: "", currentClass: "", currentRole: "student",
+            isCheating: false,
+            isLoggingIn: false 
         };
 
         function switchScreen(screenId) {
@@ -231,10 +238,14 @@
             nameEl.value = "";
             passEl.value = "";
             document.getElementById('login-msg').innerText = "";
+            state.isLoggingIn = false;
             switchScreen('login-screen');
         }
 
         async function validateLogin() {
+            if (state.isLoggingIn) return; 
+            state.isLoggingIn = true;
+            
             const rawName = document.getElementById('login-name').value.trim();
             const rawPassword = document.getElementById('login-password').value.trim();
             const msgEl = document.getElementById('login-msg');
@@ -242,28 +253,29 @@
             if (!rawName || !rawPassword) { 
                 msgEl.style.color = "#ca4754";
                 msgEl.innerText = "Name and Password cannot be empty!\n(姓名和密码不可为空)"; 
+                state.isLoggingIn = false;
                 return; 
             }
             msgEl.style.color = "#e2b714"; 
             msgEl.innerText = "Checking...";
 
             let student = null;
-            let isKamisatoAyaka = false; 
 
             if (state.currentRole === 'teacher') {
                 const { data, error } = await supabaseClient.from('teachers').select('*').ilike('name', rawName);
-                if (error) { msgEl.innerText = "Database error."; return; }
+                if (error) { msgEl.innerText = "Database error."; state.isLoggingIn = false; return; }
                 if (!data || data.length === 0) {
-                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Teacher does not exist!\n(该老师不存在)"; return;
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Teacher does not exist!\n(该老师不存在)"; state.isLoggingIn = false; return;
                 }
                 student = data[0];
                 if (String(student.password) !== rawPassword) {
-                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; return;
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; state.isLoggingIn = false; return;
                 }
                 
                 if (student.play_times >= 1) {
                     msgEl.style.color = "#ca4754"; 
                     msgEl.innerText = "You have already participated!\n(该账号已参赛)"; 
+                    state.isLoggingIn = false;
                     return;
                 }
 
@@ -273,31 +285,20 @@
                 
             } else {
                 const { data, error } = await supabaseClient.from('students').select('*').ilike('name', rawName);
-                if (error) { msgEl.innerText = "Database error."; return; }
+                if (error) { msgEl.innerText = "Database error."; state.isLoggingIn = false; return; }
                 if (!data || data.length === 0) {
-                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Student does not exist!\n(该学生不存在)"; return;
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Student does not exist!\n(该学生不存在)"; state.isLoggingIn = false; return;
                 }
                 student = data[0];
                 
-                if (rawPassword === "666666") {
-                    msgEl.style.color = "#e2b714"; 
-                    msgEl.innerText = "不是？你还真信啊，老实回去输密码吧hhhhh";
-                    return; 
-                }
-
-                if (rawPassword === "0928linghua") {
-                    isKamisatoAyaka = true;
-                    msgEl.style.color = "#00bfff"; 
-                    msgEl.innerText = "神里绫华天下第一！";
-                } else {
-                    if (String(student.password) !== rawPassword) {
-                        msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; return;
-                    }
+                if (String(student.password) !== rawPassword) {
+                    msgEl.style.color = "#ca4754"; msgEl.innerText = "Incorrect Password!\n(密码错误)"; state.isLoggingIn = false; return;
                 }
 
                 if (student.play_times >= 1) {
                     msgEl.style.color = "#ca4754"; 
                     msgEl.innerText = "You have already participated!\n(该账号已参赛)"; 
+                    state.isLoggingIn = false;
                     return;
                 }
 
@@ -306,18 +307,15 @@
                 await supabaseClient.from('students').update({ play_times: newPlayTimes }).eq('name', student.name);
             }
 
-            if (!isKamisatoAyaka) {
-                msgEl.style.color = "#4caf50"; 
-                msgEl.innerText = "Login successful. Preparing game...";
-            }
+            msgEl.style.color = "#4caf50"; 
+            msgEl.innerText = "Login successful. Preparing game...";
             
             state.currentName = student.name; 
-            state.bonusScore = isKamisatoAyaka ? 50 : 0;
 
             const { data: insertData, error: insertError } = await supabaseClient.from('scores').insert([{ 
                 player_name: state.currentName, 
                 class_name: state.currentClass, 
-                score: state.bonusScore, 
+                score: 0,
                 words_typed: 0, 
                 accuracy: 0 
             }]).select();
@@ -325,17 +323,15 @@
             if (insertError) { 
                 msgEl.style.color = "#ca4754"; 
                 msgEl.innerText = "Error: " + insertError.message; 
+                state.isLoggingIn = false;
             } else { 
                 state.currentUserId = insertData[0].id; 
-                
-                setTimeout(() => {
-                    startCompetitionGame(); 
-                    setTimeout(() => { document.getElementById('hidden-input').focus(); }, 100);
-                }, isKamisatoAyaka ? 1500 : 0); 
+                startCompetitionGame(); 
+                setTimeout(() => { document.getElementById('hidden-input').focus(); }, 100);
             }
         }
 
-        function startPractice() { state.mode = "practice"; state.timeLimit = 30; state.currentUserId = null; state.bonusScore = 0; state.isCheating = false; initGame(); }
+        function startPractice() { state.mode = "practice"; state.timeLimit = 30; state.currentUserId = null; state.isCheating = false; initGame(); }
         function startCompetitionGame() { state.mode = "competition"; state.timeLimit = 60; initGame(); }
         
         function initGame() { 
@@ -358,38 +354,12 @@
 
         function nextPage() { let stats = updateStats(); state.baseGreen = stats.totalGreen; state.baseTyped = stats.totalTyped; state.baseWords = stats.totalWords; loadNewPage(); }
 
-        // 【排版修复】用 word-wrapper 将整个单词打包渲染
         function renderText() {
             let html = "";
-            let currentWordHtml = "";
-            let currentWordLength = 0; // 记录当前单词的起始下标
-            
             for (let i = 0; i < state.targetText.length; i++) {
-                let char = state.targetText[i]; 
-                let displayChar = (char === " ") ? "&nbsp;" : char;
-                let className = "untyped";
-
-                if (i < state.typedText.length) {
-                    className = (state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) ? "correct" : "wrong";
-                } else if (i === state.typedText.length) {
-                    // 光标在当前字母
-                    currentWordHtml += `<span class="letter untyped caret">${displayChar}</span>`;
-                    currentWordLength++;
-                    continue; // 跳过下方的普通拼接，直接进入下一个循环
-                }
-                
-                currentWordHtml += `<span class="letter ${className}">${displayChar}</span>`;
-                currentWordLength++;
-
-                // 如果遇到了空格，或者到了整个文本的末尾，就说明一个单词结束了
-                if (char === " " || i === state.targetText.length - 1) {
-                    // 将整个单词用 word-wrapper 包起来
-                    html += `<span class="word-wrapper">${currentWordHtml}</span>`;
-                    // 如果刚刚那个字符是空格，我们额外补一个空格给排版（因为之前把空格包进去了，这里替换一下做法）
-                    // 为了更稳妥，直接用普通的空白符隔开 span
-                    currentWordHtml = "";
-                    currentWordLength = 0;
-                }
+                let char = state.targetText[i]; if (char === " ") char = "&nbsp;"; let className = "untyped";
+                if (i < state.typedText.length) { className = (state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) ? "correct" : "wrong"; } else if (i === state.typedText.length) { html += `<span class="letter untyped caret">${char}</span>`; continue; }
+                html += `<span class="letter ${className}">${char}</span>`;
             }
             document.getElementById('text-display').innerHTML = html;
         }
@@ -401,7 +371,6 @@
             document.getElementById('words-typed').innerText = totalWords; document.getElementById('accuracy').innerText = acc + "%"; return { totalGreen, totalTyped, totalWords, acc };
         }
 
-        // 【防御】彻底禁用粘贴
         document.getElementById('hidden-input').addEventListener('paste', (e) => {
             e.preventDefault();
             return false;
@@ -420,9 +389,8 @@
             renderText(); 
             let stats = updateStats();
 
-            // 【绝杀】实时监控当前得分，如果超过 500 分，立即判定作弊
-            let currentTotalScore = (stats.totalWords * (stats.acc / 100)) + state.bonusScore;
-            if (currentTotalScore > 500) {
+            let currentTotalScore = stats.totalWords * (stats.acc / 100);
+            if (currentTotalScore > 250) {
                 state.isCheating = true;
                 clearInterval(state.timerId); 
                 alert("警告：检测到异常分数（作弊行为），成绩已作废，比赛结束！");
@@ -440,7 +408,7 @@
             let stats = updateStats(); 
             let rawScore = stats.totalWords * (stats.acc / 100);
             
-            let finalTotalScore = state.isCheating ? 0 : (rawScore + state.bonusScore);
+            let finalTotalScore = state.isCheating ? 0 : rawScore;
 
             let scoreStr = Number.isInteger(finalTotalScore) ? finalTotalScore : finalTotalScore.toFixed(1);
             let scoreText = `Score: ${scoreStr}`; if (state.mode === 'practice') scoreText += " (Practice)";
@@ -486,6 +454,7 @@
         }
 
         async function fetchLeaderboardData(tbody, filterType) {
+            // 【已修改】去掉了 .gt('score', 0) 过滤，现在 0 分也会显示
             let query = supabaseClient.from('scores').select('*').order('score', { ascending: false });
             
             if (filterType === "teacher") {
