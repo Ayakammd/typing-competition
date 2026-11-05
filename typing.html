@@ -347,11 +347,39 @@
             document.getElementById('text-display').innerHTML = html;
         }
 
+        // —— 修复 1：完整单词计数（必须以空格结尾，最后一个词打到末尾即可） ——
         function updateStats() {
-            let pageGreen = 0; for (let i = 0; i < state.typedText.length; i++) { if (i < state.targetText.length && state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) pageGreen++; }
-            let pageWords = 0; let currentIdx = 0; for (let w of state.targetText.split(" ")) { if (state.typedText.length >= currentIdx + w.length) pageWords++; else break; currentIdx += w.length + 1; }
-            let totalGreen = state.baseGreen + pageGreen; let totalTyped = state.baseTyped + state.typedText.length; let totalWords = state.baseWords + pageWords; let acc = totalTyped > 0 ? Math.round((totalGreen / totalTyped) * 100) : 100;
-            document.getElementById('words-typed').innerText = totalWords; document.getElementById('accuracy').innerText = acc + "%"; return { totalGreen, totalTyped, totalWords, acc };
+            let pageGreen = 0;
+            for (let i = 0; i < state.typedText.length; i++) {
+                if (i < state.targetText.length && state.typedText[i].toLowerCase() === state.targetText[i].toLowerCase()) pageGreen++;
+            }
+
+            // 逐个目标词判断是否"完整打完"
+            let pageWords = 0;
+            const targetWords = state.targetText.split(" ");
+            let cursor = 0; // 当前词在 targetText 中的起始下标
+            for (let wIdx = 0; wIdx < targetWords.length; wIdx++) {
+                const w = targetWords[wIdx];
+                const wordEnd = cursor + w.length;          // 该词最后一个字符之后的下标
+                const isLastWord = (wIdx === targetWords.length - 1);
+                if (isLastWord) {
+                    // 最后一个词：打到文本末尾即算完成（无需尾随空格）
+                    if (state.typedText.length >= wordEnd) pageWords++;
+                } else {
+                    // 非最后词：必须打完词本身 + 至少一个分隔空格
+                    if (state.typedText.length >= wordEnd + 1) pageWords++;
+                    else break;
+                }
+                cursor = wordEnd + 1; // 跳过词后的空格
+            }
+
+            let totalGreen = state.baseGreen + pageGreen;
+            let totalTyped = state.baseTyped + state.typedText.length;
+            let totalWords = state.baseWords + pageWords;
+            let acc = totalTyped > 0 ? Math.round((totalGreen / totalTyped) * 100) : 100;
+            document.getElementById('words-typed').innerText = totalWords;
+            document.getElementById('accuracy').innerText = acc + "%";
+            return { totalGreen, totalTyped, totalWords, acc };
         }
 
         // 拦截电脑端的粘贴事件
@@ -403,12 +431,18 @@
             state.timerId = setInterval(() => { timeLeft--; if (timeLeft <= 0) { timerEl.innerText = "⏱ 0s"; endGame(); } else { timerEl.innerText = "⏱ " + timeLeft + "s"; } }, 1000);
         }
 
+        // —— 修复 2 & 3：用真实正确率比例算分 + 安全舍入 + 幂等保护 ——
         async function endGame() {
-            clearInterval(state.timerId); state.isPlaying = false;
-            let stats = updateStats(); 
-            let rawScore = stats.totalWords * (stats.acc / 100);
-            
-            let finalTotalScore = state.isCheating ? 0 : rawScore;
+            if (!state.isPlaying && !state.timerId) return; // 幂等：防止重复结算
+            clearInterval(state.timerId); state.timerId = null; state.isPlaying = false;
+
+            let stats = updateStats();
+
+            // 用未舍入的真实比例算分，避免"显示 100% 但实际 99.5%"造成的偏差
+            const realAccRatio = stats.totalTyped > 0 ? (stats.totalGreen / stats.totalTyped) : 1;
+            let rawScore = stats.totalWords * realAccRatio;
+            // 安全舍入到 1 位小数，避免 toFixed 的字符串解析与浮点误差
+            let finalTotalScore = state.isCheating ? 0 : Math.round(rawScore * 10) / 10;
 
             let scoreStr = Number.isInteger(finalTotalScore) ? finalTotalScore : finalTotalScore.toFixed(1);
             let scoreText = `Score: ${scoreStr}`; if (state.mode === 'practice') scoreText += " (Practice)";
@@ -417,7 +451,7 @@
             document.getElementById('final-words').innerText = stats.totalWords; 
             document.getElementById('final-acc').innerText = state.isCheating ? "0%" : stats.acc + "%";
             
-            state.finalStats = { score: parseFloat(scoreStr), words: state.isCheating ? 0 : stats.totalWords, accuracy: state.isCheating ? 0 : stats.acc }; 
+            state.finalStats = { score: finalTotalScore, words: state.isCheating ? 0 : stats.totalWords, accuracy: state.isCheating ? 0 : stats.acc }; 
             switchScreen('result-screen');
             
             const checkBtn = document.getElementById('check-rank-btn'); const backBtn = document.getElementById('back-btn');
