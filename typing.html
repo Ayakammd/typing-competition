@@ -319,7 +319,11 @@
             state.pageIndex = 0; state.baseGreen = 0; state.baseTyped = 0; state.baseWords = 0; state.isCheating = false;
             state.lastInputTime = performance.now();
             state.lastInputLength = 0;
+            
+            // 双重保险：清理任何可能残留的旧计时器和排行榜定时器
+            if (state.timerId) { clearInterval(state.timerId); state.timerId = null; }
             if(state.liveInterval) { clearInterval(state.liveInterval); state.liveInterval = null; } 
+            
             switchScreen('game-screen'); 
             document.getElementById('timer').innerText = "⏱ " + state.timeLimit + "s"; 
             loadNewPage(); 
@@ -353,7 +357,7 @@
             document.getElementById('text-display').innerHTML = html;
         }
 
-        // 【最终修复版】采用业界标准的“空格判定法”
+        // 核心算法：基于目标文本空格坐标的绝对判定
         function updateStats() {
             let pageGreen = 0;
             for (let i = 0; i < state.typedText.length; i++) {
@@ -362,21 +366,19 @@
                 }
             }
 
-            // 统计当前页完成了几个词
             let pageWords = 0;
             const typedLen = state.typedText.length;
             
-            // 遍历目标文本，如果是空格，说明前面的词打完了
             for (let i = 0; i < state.targetText.length; i++) {
                 if (state.targetText[i] === " ") {
-                    // 用户输入的长度必须越过这个空格，才算完成了一个词
+                    // 用户输入长度必须越过当前空格的位置，才算完成一个词
                     if (typedLen > i) {
                         pageWords++;
                     } else {
                         break;
                     }
                 } else if (i === state.targetText.length - 1) {
-                    // 最后一个词：如果用户输入长度已经完全覆盖了最后一个字符，算作 1 个词
+                    // 最后一个词：用户输入长度覆盖到末尾，算作 1 个词
                     if (typedLen === state.targetText.length) {
                         pageWords++;
                     }
@@ -387,9 +389,7 @@
             let totalTyped = state.baseTyped + state.typedText.length;
             let totalWords = state.baseWords + pageWords;
             
-            // 用于 UI 显示的整数正确率
             let acc = totalTyped > 0 ? Math.round((totalGreen / totalTyped) * 100) : 100;
-            // 用于计算最终 Score 的真实正确率（保留小数）
             let realAcc = totalTyped > 0 ? (totalGreen / totalTyped) : 1.0;
 
             document.getElementById('words-typed').innerText = totalWords;
@@ -440,8 +440,20 @@
         });
 
         function startTimer() {
-            let timeLeft = state.timeLimit; let timerEl = document.getElementById('timer'); timerEl.innerText = "⏱ " + timeLeft + "s";
-            state.timerId = setInterval(() => { timeLeft--; if (timeLeft <= 0) { timerEl.innerText = "⏱ 0s"; endGame(); } else { timerEl.innerText = "⏱ " + timeLeft + "s"; } }, 1000);
+            if (state.timerId) clearInterval(state.timerId); // 启动前再次确认清理旧计时器
+            let timeLeft = state.timeLimit; 
+            let timerEl = document.getElementById('timer'); 
+            timerEl.innerText = "⏱ " + timeLeft + "s";
+            
+            state.timerId = setInterval(() => { 
+                timeLeft--; 
+                if (timeLeft <= 0) { 
+                    timerEl.innerText = "⏱ 0s"; 
+                    endGame(); 
+                } else { 
+                    timerEl.innerText = "⏱ " + timeLeft + "s"; 
+                } 
+            }, 1000);
         }
 
         async function endGame() {
@@ -450,7 +462,6 @@
 
             let stats = updateStats();
 
-            // 锁死计算逻辑：分数 严格等于 单词数 * 真实正确率（保留一位小数）
             let finalTotalScore = state.isCheating ? 0 : (stats.totalWords * stats.realAcc);
             finalTotalScore = Math.round(finalTotalScore * 10) / 10;
 
